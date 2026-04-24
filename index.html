@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>散户情绪指数</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #1a1a2e; color: #fff; padding: 20px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { font-size: 24px; margin-bottom: 8px; }
+        .header p { color: #888; font-size: 13px; }
+        .stats { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .stat { flex: 1; min-width: 100px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        .stat .label { color: #888; font-size: 11px; }
+        .stat .value { font-size: 22px; font-weight: bold; margin-top: 5px; }
+        .up { color: #26a69a; }
+        .down { color: #ef5350; }
+        .neutral { color: #ffa726; }
+        #chart { width: 100%; height: 550px; background: rgba(255,255,255,0.05); border-radius: 12px; }
+        .tip { color: #666; font-size: 11px; text-align: center; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 散户情绪指数 vs 上证指数</h1>
+        <p>数据更新: <span id="updateTime"></span></p>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div id="chart"></div>
+    <div class="tip">💡 鼠标滚轮缩放 | 拖动平移 | 点击图例切换显示</div>
+    
+    <script>
+        // 内嵌数据
+        const chartData = [{"date": "2026-03-03", "index": 55.94, "sentiment": "看多", "engagement_ema": 205.96, "per_video_ema": 128724.0}, {"date": "2026-03-05", "index": 39.1, "sentiment": "看空", "engagement_ema": 16.71, "per_video_ema": 10440.8}, {"date": "2026-03-06", "index": 61.31, "sentiment": "看多", "engagement_ema": 217.47, "per_video_ema": 71093.08}, {"date": "2026-03-09", "index": 46.45, "sentiment": "中性", "engagement_ema": 35.3, "per_video_ema": 24767.6}, {"date": "2026-03-10", "index": 48.7, "sentiment": "中性", "engagement_ema": 146.5, "per_video_ema": 93188.16}, {"date": "2026-03-11", "index": 39.57, "sentiment": "看空", "engagement_ema": 110.24, "per_video_ema": 69873.7}, {"date": "2026-03-12", "index": 46.47, "sentiment": "中性", "engagement_ema": 166.84, "per_video_ema": 104860.22}, {"date": "2026-03-13", "index": 48.3, "sentiment": "中性", "engagement_ema": 220.95, "per_video_ema": 138446.53}, {"date": "2026-03-16", "index": 77.99, "sentiment": "看多", "engagement_ema": 537.28, "per_video_ema": 335802.0}, {"date": "2026-03-17", "index": 53.62, "sentiment": "中性", "engagement_ema": 451.11, "per_video_ema": 276474.4}, {"date": "2026-03-20", "index": 46.59, "sentiment": "中性", "engagement_ema": 82.45, "per_video_ema": 27950.8}, {"date": "2026-03-23", "index": 65.78, "sentiment": "看多", "engagement_ema": 265.01, "per_video_ema": 30168.65}, {"date": "2026-03-24", "index": 39.86, "sentiment": "看空", "engagement_ema": 198.42, "per_video_ema": 27608.39}, {"date": "2026-03-25", "index": 39.73, "sentiment": "看空", "engagement_ema": 153.94, "per_video_ema": 28567.03}, {"date": "2026-03-26", "index": 49.62, "sentiment": "中性", "engagement_ema": 215.69, "per_video_ema": 38043.42}, {"date": "2026-03-27", "index": 43.04, "sentiment": "看空", "engagement_ema": 194.42, "per_video_ema": 41697.95}, {"date": "2026-03-30", "index": 42.89, "sentiment": "看空", "engagement_ema": 57.92, "per_video_ema": 9824.0}, {"date": "2026-03-31", "index": 43.08, "sentiment": "看空", "engagement_ema": 90.13, "per_video_ema": 13832.4}, {"date": "2026-04-01", "index": 46.3, "sentiment": "中性", "engagement_ema": 132.29, "per_video_ema": 19708.84}, {"date": "2026-04-02", "index": 46.11, "sentiment": "中性", "engagement_ema": 116.55, "per_video_ema": 18374.0}, {"date": "2026-04-03", "index": 46.91, "sentiment": "中性", "engagement_ema": 132.06, "per_video_ema": 22778.29}, {"date": "2026-04-07", "index": 42.44, "sentiment": "看空", "engagement_ema": 41.99, "per_video_ema": 14053.9}, {"date": "2026-04-08", "index": 55.9, "sentiment": "看多", "engagement_ema": 149.17, "per_video_ema": 28522.01}, {"date": "2026-04-09", "index": 47.48, "sentiment": "中性", "engagement_ema": 146.54, "per_video_ema": 28309.94}, {"date": "2026-04-10", "index": 53.08, "sentiment": "中性", "engagement_ema": 176.02, "per_video_ema": 31377.83}, {"date": "2026-04-13", "index": 50.5, "sentiment": "中性", "engagement_ema": 72.04, "per_video_ema": 14800.63}, {"date": "2026-04-14", "index": 42.86, "sentiment": "看空", "engagement_ema": 93.57, "per_video_ema": 15999.25}, {"date": "2026-04-15", "index": 44.88, "sentiment": "看空", "engagement_ema": 116.4, "per_video_ema": 16985.42}, {"date": "2026-04-16", "index": 46.04, "sentiment": "中性", "engagement_ema": 128.94, "per_video_ema": 16760.46}, {"date": "2026-04-17", "index": 49.9, "sentiment": "中性", "engagement_ema": 145.84, "per_video_ema": 21486.92}, {"date": "2026-04-20", "index": 41.09, "sentiment": "看空", "engagement_ema": 55.79, "per_video_ema": 9884.7}, {"date": "2026-04-21", "index": 45.42, "sentiment": "中性", "engagement_ema": 75.42, "per_video_ema": 15131.55}, {"date": "2026-04-22", "index": 44.72, "sentiment": "看空", "engagement_ema": 96.27, "per_video_ema": 15522.82}, {"date": "2026-04-23", "index": 48.39, "sentiment": "中性", "engagement_ema": 107.53, "per_video_ema": 15209.61}, {"date": "2026-04-24", "index": 37.23, "sentiment": "看空", "engagement_ema": 85.58, "per_video_ema": 12087.82}];
+        const klineData = [{"date": "2026-02-24", "open": 4129.1338, "close": 4117.4089, "high": 4131.5499, "low": 4105.9369, "vol": 5.66322249, "amount": 9.38611376, "pct_chg": 0.8656}, {"date": "2026-02-25", "open": 4123.7808, "close": 4147.2305, "high": 4167.8438, "low": 4122.6987, "vol": 7.24787214, "amount": 10.859695612000001, "pct_chg": 0.7243}, {"date": "2026-02-26", "open": 4151.068, "close": 4146.6311, "high": 4152.1926, "low": 4127.1531, "vol": 6.51702826, "amount": 10.671987174, "pct_chg": -0.0145}, {"date": "2026-02-27", "open": 4128.8974, "close": 4162.8815, "high": 4166.2344, "low": 4128.36, "vol": 6.82047646, "amount": 10.723678316, "pct_chg": 0.3919}, {"date": "2026-03-02", "open": 4151.8011, "close": 4182.5909, "high": 4188.7702, "low": 4131.3676, "vol": 8.61579218, "amount": 13.458924694, "pct_chg": 0.4735}, {"date": "2026-03-03", "open": 4189.4079, "close": 4122.676, "high": 4197.228, "low": 4116.011, "vol": 9.2113917, "amount": 14.257902023, "pct_chg": -1.4325}, {"date": "2026-03-04", "open": 4087.632, "close": 4082.474, "high": 4106.0397, "low": 4055.4125, "vol": 7.65169531, "amount": 11.130819860999999, "pct_chg": -0.9751}, {"date": "2026-03-05", "open": 4109.777, "close": 4108.567, "high": 4125.6166, "low": 4090.6213, "vol": 6.89746535, "amount": 10.680437348, "pct_chg": 0.6391}, {"date": "2026-03-06", "open": 4085.8954, "close": 4124.194, "high": 4129.4647, "low": 4085.8954, "vol": 6.4676576, "amount": 9.788059271, "pct_chg": 0.3804}, {"date": "2026-03-09", "open": 4098.6987, "close": 4096.6023, "high": 4106.5336, "low": 4052.5454, "vol": 7.97803556, "amount": 11.941061932, "pct_chg": -0.669}, {"date": "2026-03-10", "open": 4098.5869, "close": 4123.138, "high": 4123.9578, "low": 4098.5869, "vol": 6.74922194, "amount": 10.364272052999999, "pct_chg": 0.6477}, {"date": "2026-03-11", "open": 4123.6663, "close": 4133.4331, "high": 4135.8392, "low": 4112.7998, "vol": 7.07727169, "amount": 10.636008744, "pct_chg": 0.2497}, {"date": "2026-03-12", "open": 4133.1996, "close": 4129.1026, "high": 4141.6488, "low": 4103.1636, "vol": 7.86151182, "amount": 10.782153297999999, "pct_chg": -0.1048}, {"date": "2026-03-13", "open": 4117.5738, "close": 4095.4485, "high": 4134.0794, "low": 4086.8469, "vol": 7.92054764, "amount": 10.639181694, "pct_chg": -0.815}, {"date": "2026-03-16", "open": 4092.2491, "close": 4084.7858, "high": 4096.1333, "low": 4048.0866, "vol": 7.32227098, "amount": 10.37223834, "pct_chg": -0.2604}, {"date": "2026-03-17", "open": 4086.2953, "close": 4049.9073, "high": 4108.4, "low": 4049.5801, "vol": 6.78771224, "amount": 9.512281293, "pct_chg": -0.8539}, {"date": "2026-03-18", "open": 4053.3052, "close": 4062.9844, "high": 4065.3734, "low": 4023.0295, "vol": 6.23873102, "amount": 8.763274914, "pct_chg": 0.3229}, {"date": "2026-03-19", "open": 4028.542, "close": 4006.5523, "high": 4042.0221, "low": 3994.1651, "vol": 6.67255422, "amount": 9.352649561, "pct_chg": -1.3889}, {"date": "2026-03-20", "open": 4004.5732, "close": 3957.0527, "high": 4022.7033, "low": 3955.7113, "vol": 6.66798387, "amount": 9.648631086, "pct_chg": -1.2355}, {"date": "2026-03-23", "open": 3904.9513, "close": 3813.2829, "high": 3906.622, "low": 3794.6844, "vol": 8.0473885, "amount": 10.86248286, "pct_chg": -3.6333}, {"date": "2026-03-24", "open": 3849.6312, "close": 3881.2797, "high": 3881.4236, "low": 3807.9937, "vol": 6.80622039, "amount": 9.314188427000001, "pct_chg": 1.7832}, {"date": "2026-03-25", "open": 3892.269, "close": 3931.8375, "high": 3933.0613, "low": 3891.8159, "vol": 6.88343626, "amount": 9.678542612000001, "pct_chg": 1.3026}, {"date": "2026-03-26", "open": 3924.9621, "close": 3889.0835, "high": 3937.1041, "low": 3880.5729, "vol": 6.15973981, "amount": 8.483613351, "pct_chg": -1.0874}, {"date": "2026-03-27", "open": 3852.0936, "close": 3913.7238, "high": 3924.1075, "low": 3852.0936, "vol": 5.61342963, "amount": 7.996964309, "pct_chg": 0.6336}, {"date": "2026-03-30", "open": 3884.2769, "close": 3923.2869, "high": 3924.2893, "low": 3872.7756, "vol": 5.95589479, "amount": 8.398224347000001, "pct_chg": 0.2443}, {"date": "2026-03-31", "open": 3924.067, "close": 3891.8605, "high": 3948.8107, "low": 3891.8605, "vol": 6.06704983, "amount": 8.919453396, "pct_chg": -0.801}, {"date": "2026-04-01", "open": 3939.5658, "close": 3948.5521, "high": 3955.943, "low": 3929.9213, "vol": 5.64611598, "amount": 8.972782139, "pct_chg": 1.4567}, {"date": "2026-04-02", "open": 3940.7989, "close": 3919.2852, "high": 3952.5761, "low": 3900.1164, "vol": 5.44212835, "amount": 8.11896567, "pct_chg": -0.7412}, {"date": "2026-04-03", "open": 3927.5923, "close": 3880.0967, "high": 3929.5285, "low": 3871.3004, "vol": 4.92699082, "amount": 7.138303321, "pct_chg": -0.9999}, {"date": "2026-04-07", "open": 3884.1505, "close": 3890.1645, "high": 3902.6065, "low": 3875.6843, "vol": 4.73615076, "amount": 7.239058373, "pct_chg": 0.2595}, {"date": "2026-04-08", "open": 3930.2507, "close": 3994.9975, "high": 3994.9975, "low": 3926.2489, "vol": 6.44135352, "amount": 10.742117013, "pct_chg": 2.6948}, {"date": "2026-04-09", "open": 3967.6296, "close": 3966.1712, "high": 3979.1271, "low": 3955.2458, "vol": 5.41569801, "amount": 9.024818401000001, "pct_chg": -0.7216}, {"date": "2026-04-10", "open": 3985.464, "close": 3986.2247, "high": 4011.0243, "low": 3979.814, "vol": 5.46415541, "amount": 9.556641072, "pct_chg": 0.5056}, {"date": "2026-04-13", "open": 3971.1985, "close": 3988.558, "high": 3991.2622, "low": 3966.1981, "vol": 5.45781768, "amount": 9.194364818, "pct_chg": 0.0585}, {"date": "2026-04-14", "open": 4006.7267, "close": 4026.6256, "high": 4026.6256, "low": 3992.4071, "vol": 5.70259003, "amount": 9.98435132, "pct_chg": 0.9544}, {"date": "2026-04-15", "open": 4039.4711, "close": 4027.2095, "high": 4050.6208, "low": 4020.9039, "vol": 5.69458589, "amount": 10.288518715, "pct_chg": 0.0145}, {"date": "2026-04-16", "open": 4030.1378, "close": 4055.5468, "high": 4057.8314, "low": 4028.9086, "vol": 5.45876967, "amount": 9.765654897000001, "pct_chg": 0.7036}, {"date": "2026-04-17", "open": 4043.3813, "close": 4051.4254, "high": 4058.6041, "low": 4038.4287, "vol": 5.48791406, "amount": 10.135206602, "pct_chg": -0.1016}, {"date": "2026-04-20", "open": 4053.3745, "close": 4082.1271, "high": 4083.1902, "low": 4051.685, "vol": 5.89841379, "amount": 10.845780064000001, "pct_chg": 0.7578}, {"date": "2026-04-21", "open": 4075.8454, "close": 4085.0766, "high": 4086.6369, "low": 4062.1326, "vol": 5.7668945, "amount": 10.333490162, "pct_chg": 0.0723}, {"date": "2026-04-22", "open": 4074.8131, "close": 4106.2581, "high": 4106.8441, "low": 4074.6796, "vol": 5.82466346, "amount": 10.936258924, "pct_chg": 0.5185}, {"date": "2026-04-23", "open": 4110.7883, "close": 4093.2501, "high": 4114.8443, "low": 4070.4598, "vol": 6.71166092, "amount": 12.343962075999999, "pct_chg": -0.3168}, {"date": "2026-04-24", "open": 4081.0326, "close": 4079.9004, "high": 4092.6131, "low": 4061.1453, "vol": 6.05031798, "amount": 11.430001951, "pct_chg": -0.3261}];
+        
+        // 更新统计
+        const latest = chartData[chartData.length - 1];
+        const latestK = klineData[klineData.length - 1];
+        document.getElementById('updateTime').textContent = latest.date;
+        
+        const bullish = chartData.filter(d => d.sentiment === '看多').length;
+        const bearish = chartData.filter(d => d.sentiment === '看空').length;
+        
+        document.getElementById('stats').innerHTML = `
+            <div class="stat">
+                <div class="label">上证指数</div>
+                <div class="value ${latestK.pct_chg >= 0 ? 'up' : 'down'}">${latestK.close.toFixed(2)}</div>
+            </div>
+            <div class="stat">
+                <div class="label">涨跌幅</div>
+                <div class="value ${latestK.pct_chg >= 0 ? 'up' : 'down'}">${latestK.pct_chg >= 0 ? '+' : ''}${latestK.pct_chg.toFixed(2)}%</div>
+            </div>
+            <div class="stat">
+                <div class="label">情绪指数</div>
+                <div class="value neutral">${latest.index}</div>
+            </div>
+            <div class="stat">
+                <div class="label">情绪判断</div>
+                <div class="value ${latest.sentiment === '看多' ? 'up' : latest.sentiment === '看空' ? 'down' : 'neutral'}">${latest.sentiment}</div>
+            </div>
+            <div class="stat">
+                <div class="label">看多天数</div>
+                <div class="value up">${bullish}</div>
+            </div>
+            <div class="stat">
+                <div class="label">看空天数</div>
+                <div class="value down">${bearish}</div>
+            </div>
+        `;
+        
+        // 合并日期
+        const dateSet = new Set([...chartData.map(d => d.date), ...klineData.map(d => d.date)]);
+        const dates = Array.from(dateSet).sort();
+        
+        const sMap = {}; chartData.forEach(d => sMap[d.date] = d);
+        const kMap = {}; klineData.forEach(d => kMap[d.date] = d);
+        
+        const klines = [], vols = [], sentiments = [];
+        dates.forEach(date => {
+            const k = kMap[date], s = sMap[date];
+            klines.push(k ? [k.open, k.close, k.low, k.high] : null);
+            vols.push(k ? k.vol : null);
+            sentiments.push(s ? s.index : null);
+        });
+        
+        // 初始化图表
+        const chart = echarts.init(document.getElementById('chart'));
+        chart.setOption({
+            backgroundColor: 'transparent',
+            tooltip: {
+                trigger: 'axis',
+                backgroundColor: 'rgba(0,0,0,0.85)',
+                borderColor: '#333',
+                textStyle: { color: '#fff' }
+            },
+            legend: { data: ['K线', '情绪指数'], top: 10, textStyle: { color: '#888' } },
+            toolbox: { right: 20, top: 10, feature: { dataZoom: { yAxisIndex: false }, restore: {}, saveAsImage: {} } },
+            grid: [
+                { left: 60, right: 60, top: 50, height: '45%' },
+                { left: 60, right: 60, top: '60%', height: '18%' }
+            ],
+            xAxis: [
+                { type: 'category', data: dates, gridIndex: 0, axisLine: { lineStyle: { color: '#444' } }, axisLabel: { color: '#888', fontSize: 10 } },
+                { type: 'category', data: dates, gridIndex: 1, axisLine: { lineStyle: { color: '#444' } }, axisLabel: { show: false } }
+            ],
+            yAxis: [
+                { type: 'value', gridIndex: 0, scale: true, axisLine: { lineStyle: { color: '#444' } }, axisLabel: { color: '#888' }, splitLine: { lineStyle: { color: '#333' } } },
+                { type: 'value', gridIndex: 0, scale: true, position: 'right', min: 0, max: 100, axisLine: { lineStyle: { color: '#444' } }, axisLabel: { color: '#42a5f5' }, splitLine: { show: false } },
+                { type: 'value', gridIndex: 1, splitNumber: 2, axisLine: { lineStyle: { color: '#444' } }, axisLabel: { color: '#888' }, splitLine: { show: false } }
+            ],
+            dataZoom: [
+                { type: 'inside', xAxisIndex: [0, 1] },
+                { type: 'slider', xAxisIndex: [0, 1], bottom: 15, height: 20, borderColor: '#333', backgroundColor: 'rgba(0,0,0,0.3)', fillerColor: 'rgba(66,165,245,0.2)', handleStyle: { color: '#42a5f5' }, textStyle: { color: '#888' } }
+            ],
+            series: [
+                { name: 'K线', type: 'candlestick', data: klines, xAxisIndex: 0, yAxisIndex: 0, itemStyle: { color: '#26a69a', color0: '#ef5350', borderColor: '#26a69a', borderColor0: '#ef5350' } },
+                { name: '情绪指数', type: 'line', data: sentiments, xAxisIndex: 0, yAxisIndex: 1, smooth: true, symbol: 'circle', symbolSize: 4, lineStyle: { width: 2, color: '#42a5f5' }, itemStyle: { color: '#42a5f5' }, markLine: { silent: true, symbol: 'none', lineStyle: { type: 'dashed', width: 1 }, data: [{ yAxis: 55, lineStyle: { color: '#26a69a' }, label: { formatter: '看多', color: '#26a69a' } }, { yAxis: 45, lineStyle: { color: '#ef5350' }, label: { formatter: '看空', color: '#ef5350' } }] } },
+                { name: '成交量', type: 'bar', data: vols, xAxisIndex: 1, yAxisIndex: 2, itemStyle: { color: params => { const k = klines[params.dataIndex]; return k && k[1] >= k[0] ? '#26a69a' : '#ef5350'; } } }
+            ]
+        });
+        
+        window.addEventListener('resize', () => chart.resize());
+    </script>
+</body>
+</html>
